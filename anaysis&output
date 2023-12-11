@@ -1,0 +1,103 @@
+import pandas as pd 
+ 
+# Load the dataset file_path = "/content/train.csv" df = pd.read_csv(file_path) 
+ 
+# Inspect the dataset 
+print(df.head()) 
+ 
+  id  label                                              tweet 
+0	1      0   @user when a father is dysfunctional and is s... 
+1	2      0  @user @user thanks for #lyft credit i can't us... 
+2	3      0                                bihday your majesty 3   4      0  #model   i love u take with u all the time in ... 
+4   5      0             factsguide: society now    #motivation 
+ 
+import re from nltk.corpus import stopwords from nltk.stem import PorterStemmer from nltk.tokenize import word_tokenize nltk.download('stopwords') nltk.download('punkt') 
+ def preprocess_text(text): 
+    # Remove special characters, links, and user mentions     text = re.sub(r'http\S+', '', text)     text = re.sub('@[^\s]+', '', text)     text = re.sub(r'#', '', text) 
+ 
+    # Tokenization 
+    tokens = word_tokenize(text) 
+ 
+    # Lowercasing     tokens = [word.lower() for word in tokens] 
+ 
+    # Remove stop words, punctuation, and special characters     stop_words = set(stopwords.words('english')) 
+    tokens = [word for word in tokens if word.isalnum() and word not in stop_words] 
+ 
+    # Stemming 
+    stemmer = PorterStemmer()     tokens = [stemmer.stem(word) for word in tokens] 
+ 
+    return ' '.join(tokens) 
+ 
+# Apply preprocessing to the 'tweet' column df['cleaned_tweet'] = df['tweet'].apply(preprocess_text) 
+ 
+# Save the preprocessed dataset df.to_csv('preprocessed_dataset.csv', index=False) 
+ 
+ 
+[nltk_data] Downloading package stopwords to /root/nltk_data... 
+[nltk_data]   Package stopwords is already up-to-date! 
+[nltk_data] Downloading package punkt to /root/nltk_data... [nltk_data]   Package punkt is already up-to-date! 
+ 
+from sklearn.feature_extraction.text import CountVectorizer  
+# Create a Bag-of-Words model 
+vectorizer_bow = CountVectorizer(max_features=5000) 
+X_bow = vectorizer_bow.fit_transform(df['cleaned_tweet'])  
+# Save the BoW feature matrix pd.DataFrame(X_bow.toarray(), columns=vectorizer_bow.get_feature_names_out()).to_csv('bow_features.csv', index=False) 
+ 
+from sklearn.feature_extraction.text import TfidfVectorizer  
+# Create a TF-IDF model 
+vectorizer_tfidf = TfidfVectorizer(max_features=5000) 
+X_tfidf = vectorizer_tfidf.fit_transform(df['cleaned_tweet'])  
+# Save the TF-IDF feature matrix pd.DataFrame(X_tfidf.toarray(), columns=vectorizer_tfidf.get_feature_names_out()).to_csv('tfidf_features.c sv', index=False) 
+from sklearn.model_selection import train_test_split from sklearn.linear_model import LogisticRegression from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score 
+ 
+# Split the dataset 
+X_train, X_test, y_train, y_test = train_test_split(X_bow, df['label'], test_size=0.2, random_state=42) 
+ 
+# Train the Logistic Regression model model = LogisticRegression() model.fit(X_train, y_train) 
+ 
+# Make predictions y_pred = model.predict(X_test) 
+ 
+# Evaluate the model accuracy = accuracy_score(y_test, y_pred) precision = precision_score(y_test, y_pred) recall = recall_score(y_test, y_pred) f1 = f1_score(y_test, y_pred) 
+ 
+# Print evaluation metrics print(f"Accuracy: {accuracy:.4f}") print(f"Precision: {precision:.4f}") print(f"Recall: {recall:.4f}") print(f"F1 Score: {f1:.4f}") 
+ 
+Accuracy: 0.9570 
+Precision: 0.8153 
+Recall: 0.5132 
+F1 Score: 0.6299 
+ 
+# Create a TF-IDF model 
+vectorizer_tfidf = TfidfVectorizer() 
+X_tfidf = vectorizer_tfidf.fit_transform(df['cleaned_tweet'])  
+# Split the dataset for TF-IDF 
+X_train_tfidf, X_test_tfidf, y_train_tfidf, y_test_tfidf = 
+train_test_split(X_tfidf, df['label'], test_size=0.2, random_state=42)  
+# Train the Logistic Regression model with TF-IDF features model_tfidf = LogisticRegression() model_tfidf.fit(X_train_tfidf, y_train_tfidf) 
+ 
+# Make predictions 
+y_pred_tfidf = model_tfidf.predict(X_test_tfidf) 
+ 
+# Evaluate the model with TF-IDF features 
+accuracy_tfidf = accuracy_score(y_test_tfidf, y_pred_tfidf) precision_tfidf = precision_score(y_test_tfidf, y_pred_tfidf) recall_tfidf = recall_score(y_test_tfidf, y_pred_tfidf) 
+f1_tfidf = f1_score(y_test_tfidf, y_pred_tfidf) 
+ 
+# Print evaluation metrics for TF-IDF print("\nTF-IDF Feature Extraction:") print(f"Accuracy: {accuracy_tfidf:.4f}") print(f"Precision: {precision_tfidf:.4f}") print(f"Recall: {recall_tfidf:.4f}") print(f"F1 Score: {f1_tfidf:.4f}") 
+ 
+# Comparative Analysis print("\nComparative Analysis:") print("BoW                    vs           TF-IDF") print(f"Accuracy -> BoW: {accuracy:.4f}       TF-IDF: 
+{accuracy_tfidf:.4f}") print(f"Precision -> BoW: {precision:.4f}     TF-IDF: 
+{precision_tfidf:.4f}") print(f"Recall -> BoW: {recall:.4f}          TF-IDF: {recall_tfidf:.4f}") print(f"F1 Score -> BoW: {f1:.4f}           TF-IDF: {f1_tfidf:.4f}")  
+ 
+ 
+TF-IDF Feature Extraction: 
+Accuracy: 0.9470 
+Precision: 0.9270 
+Recall: 0.2785 
+F1 Score: 0.4283 
+ 
+Comparative Analysis: 
+BoW                    vs           TF-IDF 
+Accuracy -> BoW: 0.9570       TF-IDF: 0.9470 
+Precision -> BoW: 0.8153     TF-IDF: 0.9270 
+Recall -> BoW: 0.5132          TF-IDF: 0.2785 
+F1 Score -> BoW: 0.6299           TF-IDF: 0.4283 
+ 
